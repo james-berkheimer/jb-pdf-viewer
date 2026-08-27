@@ -1,23 +1,55 @@
+# System unit running as james.
+#
+# It must be a *system* unit, not a user unit: the library sits on an NFS
+# export whose directories are mode 770 and reachable only through the
+# truenas_group / share_group memberships. A `systemd --user` manager freezes
+# its supplementary groups at login, so a user service misses any group added
+# afterwards and gets EACCES on every PDF. With User= here, systemd calls
+# initgroups() at each start and always has the current set.
+#
+#   install:  deploy/install.sh
+#   manage:   pdfv-start | pdfv-stop | pdfv-restart | pdfv-logs
+#
 [Unit]
-Description=jb-pdf-viewer (magazine reader)
-After=network-online.target
+Description=jb-pdf-viewer (self-hosted PDF reader)
+Documentation=https://github.com/james-berkheimer/jb-pdf-viewer
+# The library is on NFS; without this the service can start before the mount
+# is ready and serve a catalogue it cannot read.
+RequiresMountsFor=/mnt/media
+After=network-online.target remote-fs.target
 Wants=network-online.target
 
 [Service]
 Type=exec
 User=james
+Group=james
 WorkingDirectory=/home/james/code/jb-pdf-viewer
+
 Environment=PDFV_LIBRARY=/mnt/media/books/roleplaying/dungeons_and_dragons/magazines
-Environment=PDFV_CACHE_GB=20
-ExecStart=/home/james/code/jb-pdf-viewer/.venv/bin/uvicorn app.main:app --host 0.0.0.0 --port 8800
+Environment=PDFV_CACHE_GB=40
+Environment=PDFV_HOST=0.0.0.0
+Environment=PDFV_PORT=8800
+ExecStart=/home/james/code/jb-pdf-viewer/.venv/bin/uvicorn app.main:app \
+    --host ${PDFV_HOST} --port ${PDFV_PORT} \
+    --log-level info --no-access-log
+
 Restart=on-failure
 RestartSec=5
+# Rendering is a short CPU burst per page. ollama shares this box, so yield to
+# it rather than compete: these only bite under contention.
+Nice=5
+CPUWeight=40
+IOWeight=50
 
-# The library is read-only to this service; only ./data is written.
+# The library is read-only to this service; only ./data is ever written.
 ProtectSystem=strict
 ReadWritePaths=/home/james/code/jb-pdf-viewer/data
 PrivateTmp=true
 NoNewPrivileges=true
+ProtectKernelTunables=true
+ProtectControlGroups=true
+RestrictSUIDSGID=true
+RestrictRealtime=true
 
 [Install]
 WantedBy=multi-user.target

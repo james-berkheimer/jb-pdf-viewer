@@ -111,11 +111,46 @@ All via environment variables:
 ### Run as a service
 
 ```bash
-sudo cp deploy/jb-pdf-viewer.service /etc/systemd/system/
-sudo systemctl enable --now jb-pdf-viewer
+deploy/install.sh
 ```
 
-The unit runs read-only against the library and only writes `./data`.
+Installs the systemd unit, enables it at boot, starts it, and adds the shell
+helpers to `~/.bash_aliases`. Safe to re-run.
+
+Then, from any SSH session:
+
+| | |
+|---|---|
+| `pdfv` | is it up, on what URL, and what it holds |
+| `pdfv-start` `pdfv-stop` `pdfv-restart` | control it |
+| `pdfv-status` | full systemd status |
+| `pdfv-logs` | follow the log |
+| `pdfv-errors` | recent warnings and errors |
+| `pdfv-libs list` | configured libraries |
+| `pdfv-libs add "Name" /path --index` | add one and scan it |
+| `pdfv-scan [id]` | rescan everything, or one library |
+| `pdfv-warm --pages 6` | pre-render opening pages |
+| `pdfv-update` | git pull, deps, reinstall unit if changed, restart |
+| `pdfv-disk` | what `data/` is using |
+| `pdfv-help` | the whole list |
+
+The unit runs read-only against the library and only writes `./data`. It waits
+for the NFS mount before starting, restarts on failure, and runs at `Nice=5`
+with a reduced `CPUWeight` so it yields to anything else on the box rather than
+competing for the CPU during a render burst.
+
+**Why a system unit and not a `--user` one.** The library is an NFS export
+whose directories are mode 770, reachable only through supplementary group
+membership. A `systemd --user` manager fixes its group list at login, so any
+group added afterwards is invisible to it and every PDF read fails with
+`EACCES`. A system unit with `User=` runs `initgroups()` at each start and
+always has the current set. If you ever hit permission errors on the library,
+compare `id` against the service's groups:
+
+```bash
+sudo tr '\0' '\n' < /proc/$(systemctl show jb-pdf-viewer -p MainPID --value)/status \
+    | grep Groups
+```
 
 ### Optional: pre-warm the cache
 
