@@ -28,10 +28,14 @@ alias pdfv-warm='"$PDFV_PY" "$PDFV_HOME/scripts/prewarm.py"'
 # --- status ----------------------------------------------------------------
 # One-line health check: is it up, on which URL, and what does it hold.
 pdfv() {
-    local state url ip
+    local state url port host
     state=$(systemctl is-active "$PDFV_UNIT" 2>/dev/null)
-    ip=$(hostname -I | awk '{print $1}')
-    url="http://${ip}:${PDFV_PORT:-8800}"
+    # Read the port from the unit so this never drifts from what is deployed.
+    port=$(systemctl show "$PDFV_UNIT" -p Environment --value 2>/dev/null \
+           | tr ' ' '\n' | sed -n 's/^PDFV_PORT=//p')
+    host="$(hostname).local"
+    if [ "${port:-80}" = "80" ]; then url="http://${host}"
+    else url="http://${host}:${port}"; fi
 
     if [ "$state" != "active" ]; then
         printf '  jb-pdf-viewer: \033[31m%s\033[0m   (pdfv-start to bring it up)\n' "$state"

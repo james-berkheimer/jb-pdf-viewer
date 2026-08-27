@@ -41,6 +41,9 @@ python3 -m venv .venv
 ./run.sh                                    # http://0.0.0.0:8800
 ```
 
+For a permanent install see **Run as a service** below, which serves it on
+port 80 under the host's own name.
+
 `run.sh` builds the index automatically on first start.
 
 ## Libraries
@@ -133,6 +136,24 @@ Then, from any SSH session:
 | `pdfv-update` | git pull, deps, reinstall unit if changed, restart |
 | `pdfv-disk` | what `data/` is using |
 | `pdfv-help` | the whole list |
+
+### Reaching it by name
+
+The service binds port 80 directly via `AmbientCapabilities=CAP_NET_BIND_SERVICE`,
+so no reverse proxy is needed just to drop `:8800` from the URL. For the name
+itself, `avahi-daemon` publishes the host over mDNS:
+
+    http://aule.local
+
+That resolves from macOS, iOS/iPadOS, Linux, Windows 10+ and Android 12+
+without touching the router. Avahi is pinned to the LAN interface
+(`allow-interfaces=eno1` in `/etc/avahi/avahi-daemon.conf`) because it
+otherwise also advertises the Docker bridge address, which clients cannot
+reach.
+
+If you would rather have a name of your own choosing — `books.lan`,
+`library.home` — add a static DNS entry on the router pointing it at this
+host; nothing in the app needs to change.
 
 The unit runs read-only against the library and only writes `./data`. It waits
 for the NFS mount before starting, restarts on failure, and runs at `Nice=5`

@@ -158,6 +158,13 @@ def _shell(name: str, request: Request) -> Response:
                     headers={"ETag": etag, "Cache-Control": REVALIDATE})
 
 
+@app.get("/favicon.ico", include_in_schema=False)
+async def favicon():
+    return FileResponse(WEB / "static" / "favicon.ico",
+                        media_type="image/x-icon",
+                        headers={"Cache-Control": "public, max-age=604800"})
+
+
 @app.get("/", response_class=HTMLResponse)
 async def page_library(request: Request):
     return _shell("index.html", request)

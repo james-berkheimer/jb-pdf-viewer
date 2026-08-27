@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" role="img"
+     aria-label="jb-pdf-viewer">
+  <title>jb-pdf-viewer</title>
+  <!-- An open two-page spread: the reader's defining view. Filled rather than
+       stroked, with a wide gutter, so the two halves stay separate at 16px
+       where thin strokes and fine detail disappear. -->
+  <rect width="32" height="32" rx="7" fill="#1b1e24"/>
+  <path d="M14.6 9.4C12.6 7.4 9.9 6.3 7 6.3H4.9A1.4 1.4 0 0 0 3.5 7.7v14.6A1.4 1.4 0 0 0 4.9 23.7H7c2.9 0 5.6 1.1 7.6 3.1z" fill="#d4894a"/>
+  <path d="M17.4 9.4C19.4 7.4 22.1 6.3 25 6.3h2.1a1.4 1.4 0 0 1 1.4 1.4v14.6a1.4 1.4 0 0 1-1.4 1.4H25c-2.9 0-5.6 1.1-7.6 3.1z" fill="#f0a763"/>
+</svg>

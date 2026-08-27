@@ -28,10 +28,15 @@ WorkingDirectory=/home/james/code/jb-pdf-viewer
 Environment=PDFV_LIBRARY=/mnt/media/books/roleplaying/dungeons_and_dragons/magazines
 Environment=PDFV_CACHE_GB=40
 Environment=PDFV_HOST=0.0.0.0
-Environment=PDFV_PORT=8800
+Environment=PDFV_PORT=80
 ExecStart=/home/james/code/jb-pdf-viewer/.venv/bin/uvicorn app.main:app \
     --host ${PDFV_HOST} --port ${PDFV_PORT} \
     --log-level info --no-access-log
+
+# Port 80 is privileged. Granting just this one capability is cleaner than
+# putting a whole reverse proxy in front purely to drop ":8800" from the URL.
+AmbientCapabilities=CAP_NET_BIND_SERVICE
+CapabilityBoundingSet=CAP_NET_BIND_SERVICE
 
 Restart=on-failure
 RestartSec=5
