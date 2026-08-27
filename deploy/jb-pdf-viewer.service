@@ -1,0 +1,23 @@
+[Unit]
+Description=jb-pdf-viewer (magazine reader)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=exec
+User=james
+WorkingDirectory=/home/james/code/jb-pdf-viewer
+Environment=PDFV_LIBRARY=/mnt/media/books/roleplaying/dungeons_and_dragons/magazines
+Environment=PDFV_CACHE_GB=20
+ExecStart=/home/james/code/jb-pdf-viewer/.venv/bin/uvicorn app.main:app --host 0.0.0.0 --port 8800
+Restart=on-failure
+RestartSec=5
+
+# The library is read-only to this service; only ./data is written.
+ProtectSystem=strict
+ReadWritePaths=/home/james/code/jb-pdf-viewer/data
+PrivateTmp=true
+NoNewPrivileges=true
+
+[Install]
+WantedBy=multi-user.target

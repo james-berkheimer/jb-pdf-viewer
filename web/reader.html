@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Reader · jb-pdf-viewer</title>
+<link rel="stylesheet" href="/static/css/app.css">
+<link rel="stylesheet" href="/static/css/reader.css">
+</head>
+<body class="reader" data-mode="spread" data-side="open" data-surface="dark">
+
+<header class="topbar">
+  <a class="btn icon" href="/" title="Back to library" aria-label="Back to library">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+         stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+  </a>
+  <button class="btn icon" id="t-side" aria-pressed="true" title="Sidebar (t)" aria-label="Toggle sidebar">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+         stroke-linecap="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M9 4v16"/></svg>
+  </button>
+
+  <div class="rtitle">
+    <span class="t" id="doc-title">Loading…</span>
+    <span class="s" id="doc-sub"></span>
+  </div>
+
+  <span class="spacer"></span>
+
+  <div class="seg" role="group" aria-label="View mode">
+    <button class="btn" data-mode="single" title="Single page (1)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><rect x="7" y="3" width="10" height="18" rx="1.5"/></svg>
+    </button>
+    <button class="btn" data-mode="spread" title="Two-page spread (2)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><rect x="2" y="4" width="9" height="16" rx="1.5"/><rect x="13" y="4" width="9" height="16" rx="1.5"/></svg>
+    </button>
+    <button class="btn" data-mode="scroll" title="Continuous scroll (3)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><rect x="6" y="2" width="12" height="9" rx="1.5"/><rect x="6" y="13" width="12" height="9" rx="1.5"/></svg>
+    </button>
+  </div>
+
+  <div class="seg" role="group" aria-label="Zoom">
+    <button class="btn" id="z-out" title="Zoom out (−)" aria-label="Zoom out">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 12h14"/></svg>
+    </button>
+    <button class="btn" id="z-fit" title="Click to fit the page again (0)" style="min-width:62px">
+      <span id="z-label">Fit</span>
+    </button>
+    <button class="btn" id="z-in" title="Zoom in (+)" aria-label="Zoom in">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+    </button>
+  </div>
+
+  <button class="btn icon" id="t-magnify" aria-pressed="false"
+          title="Magnifier (m) — hover to inspect, click to zoom in and read"
+          aria-label="Magnifier">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+         stroke-linecap="round"><circle cx="10.5" cy="10.5" r="6.5"/>
+      <path d="m20 20-4.6-4.6M10.5 7.8v5.4M7.8 10.5h5.4"/></svg>
+  </button>
+  <button class="btn icon" id="t-surface" title="Reading surface (b)" aria-label="Change surface">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><circle cx="12" cy="12" r="9"/><path d="M12 3a9 9 0 0 0 0 18z" fill="currentColor" stroke="none"/></svg>
+  </button>
+  <button class="btn icon" id="t-full" title="Fullscreen (f)" aria-label="Fullscreen">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9V5a1 1 0 0 1 1-1h4M20 9V5a1 1 0 0 0-1-1h-4M4 15v4a1 1 0 0 0 1 1h4M20 15v4a1 1 0 0 1-1 1h-4"/></svg>
+  </button>
+  <button class="btn icon" id="t-help" title="Keyboard shortcuts (?)" aria-label="Shortcuts">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M9.6 9.2a2.5 2.5 0 1 1 3.2 2.9c-.6.2-.9.7-.9 1.3v.4"/><circle cx="12" cy="17" r=".6" fill="currentColor"/></svg>
+  </button>
+</header>
+
+<aside class="side" id="side">
+  <div class="side-tabs" role="tablist">
+    <button role="tab" data-tab="toc" aria-selected="true">Contents</button>
+    <button role="tab" data-tab="thumbs" aria-selected="false">Pages</button>
+    <button role="tab" data-tab="find" aria-selected="false">Find</button>
+  </div>
+  <div class="side-panel" data-panel="toc" data-open role="tabpanel"></div>
+  <div class="side-panel" data-panel="thumbs" role="tabpanel"><div class="thumbs" id="thumbs"></div></div>
+  <div class="side-panel" data-panel="find" role="tabpanel">
+    <div class="side-search">
+      <input id="find-q" type="search" placeholder="Search inside this issue…"
+             autocomplete="off" spellcheck="false" aria-label="Search inside this issue">
+    </div>
+    <div id="find-results"></div>
+  </div>
+</aside>
+
+<main class="stage" id="stage" tabindex="0">
+  <div class="zone prev" id="z-prev" aria-hidden="true"><i>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></i></div>
+  <div class="zone next" id="z-next" aria-hidden="true"><i>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg></i></div>
+  <div class="pages" id="pages"></div>
+  <div class="chips" id="chips"></div>
+</main>
+
+<footer class="foot">
+  <button class="btn icon" id="p-prev" title="Previous (←)" aria-label="Previous page">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+  </button>
+  <span class="pageno">
+    <input id="pg-input" type="text" inputmode="numeric" value="1" aria-label="Page number">
+    <span id="pg-total">/ —</span>
+  </span>
+  <div class="scrub">
+    <input id="scrub" type="range" min="1" max="1" value="1" aria-label="Page slider">
+    <div class="scrub-peek" id="peek"><img alt=""><span></span></div>
+  </div>
+  <button class="btn icon" id="p-next" title="Next (→)" aria-label="Next page">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
+  </button>
+  <a class="btn" id="dl" download title="Download the original PDF">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m0 0 4-4m-4 4-4-4M4 19h16"/></svg>
+    PDF
+  </a>
+</footer>
+
+<div class="sheet" id="help" hidden>
+  <div class="card">
+    <div class="card-head">
+      <h3>Keyboard shortcuts</h3>
+      <span class="sub">Click a key to change it</span>
+      <span style="flex:1"></span>
+      <button class="btn" id="help-reset" title="Restore every default binding">Reset</button>
+      <button class="btn" id="help-close">Close</button>
+    </div>
+    <div class="card-body" id="help-body"></div>
+  </div>
+</div>
+</div>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script type="module" src="/static/js/reader.js"></script>
+</body>
+</html>
