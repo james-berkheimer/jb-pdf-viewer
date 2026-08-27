@@ -41,6 +41,19 @@ sudo cp "$REPO/deploy/$UNIT" "$UNIT_DIR/$UNIT"
 sudo systemctl daemon-reload
 echo "  $UNIT_DIR/$UNIT"
 
+say "Publishing the name over mDNS"
+if systemctl list-unit-files avahi-daemon.service >/dev/null 2>&1; then
+    sudo install -m 0755 "$REPO/deploy/mdns-alias.sh" /usr/local/bin/jb-pdf-viewer-mdns
+    sudo cp "$REPO/deploy/jb-pdf-viewer-mdns.service" "$UNIT_DIR/"
+    sudo systemctl daemon-reload
+    sudo systemctl enable --now jb-pdf-viewer-mdns.service >/dev/null 2>&1
+    echo "  http://jb-pdf-viewer.local"
+else
+    echo "  avahi-daemon not installed - skipping the name."
+    echo "  Install it for http://jb-pdf-viewer.local :"
+    echo "      sudo apt install avahi-daemon avahi-utils"
+fi
+
 say "Enabling start at boot"
 sudo systemctl enable "$UNIT" >/dev/null
 echo "  enabled"
@@ -62,8 +75,11 @@ say "Starting"
 sudo systemctl restart "$UNIT"
 sleep 3
 if systemctl is-active --quiet "$UNIT"; then
-    IP=$(hostname -I | awk '{print $1}')
-    echo "  running on http://${IP}:8800"
+    if systemctl is-active --quiet jb-pdf-viewer-mdns.service 2>/dev/null; then
+        echo "  running on http://jb-pdf-viewer.local"
+    else
+        echo "  running on http://$(hostname -I | awk '{print $1}')"
+    fi
 else
     echo "  failed to start. Recent log:"
     journalctl --user -u "$UNIT" -n 20 --no-pager | sed 's/^/      /'

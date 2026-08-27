@@ -139,21 +139,34 @@ Then, from any SSH session:
 
 ### Reaching it by name
 
-The service binds port 80 directly via `AmbientCapabilities=CAP_NET_BIND_SERVICE`,
-so no reverse proxy is needed just to drop `:8800` from the URL. For the name
-itself, `avahi-daemon` publishes the host over mDNS:
+    http://jb-pdf-viewer.local
 
-    http://aule.local
+Two pieces make that work. The service binds port 80 directly via
+`AmbientCapabilities=CAP_NET_BIND_SERVICE`, which is lighter than running a
+reverse proxy purely to drop `:8800` from the address. The name itself is an
+mDNS alias published by `jb-pdf-viewer-mdns.service`, so the reader answers to
+the app's name rather than the host's. It resolves from macOS, iOS/iPadOS,
+Linux, Windows 10+ and Android 12+ with no router configuration.
 
-That resolves from macOS, iOS/iPadOS, Linux, Windows 10+ and Android 12+
-without touching the router. Avahi is pinned to the LAN interface
-(`allow-interfaces=eno1` in `/etc/avahi/avahi-daemon.conf`) because it
-otherwise also advertises the Docker bridge address, which clients cannot
-reach.
+Two things that are easy to get wrong here:
 
-If you would rather have a name of your own choosing — `books.lan`,
-`library.home` — add a static DNS entry on the router pointing it at this
-host; nothing in the app needs to change.
+- **Not an `/etc/avahi/hosts` entry.** A static host entry also publishes a
+  reverse PTR record for the address, which collides with the one the host
+  already owns for its real name — avahi rejects it with *"Local name
+  collision"*. `avahi-publish -a -R` adds the forward record only, so
+  `jb-pdf-viewer.local` resolves while the address still reverses to the host.
+- **Avahi is pinned to the LAN interface** (`allow-interfaces=eno1`). By
+  default it also advertises the Docker bridge address, and a client that
+  picks that record cannot reach the machine at all.
+
+The publisher runs as root because avahi's D-Bus policy only lets root and the
+`avahi` user create entry groups; it publishes one record, holds no
+capabilities, and is capped at 32 MB.
+
+`pdfv-name` shows the alias and what it resolves to. To use a different name,
+set `PDFV_MDNS_NAME` in the unit. For a name outside `.local` — `books.lan`,
+`library.home` — add a static DNS entry on the router instead; nothing in the
+app changes.
 
 The unit runs read-only against the library and only writes `./data`. It waits
 for the NFS mount before starting, restarts on failure, and runs at `Nice=5`

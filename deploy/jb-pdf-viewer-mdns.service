@@ -1,0 +1,29 @@
+# Publishes the mDNS alias that lets the reader be reached as
+# http://jb-pdf-viewer.local rather than by the host's own name.
+[Unit]
+Description=mDNS alias for jb-pdf-viewer
+# avahi-publish holds the registration only while it runs, so it has to follow
+# the daemon's lifecycle rather than merely start after it.
+Requires=avahi-daemon.service
+After=avahi-daemon.service network-online.target
+PartOf=avahi-daemon.service
+
+[Service]
+Type=exec
+# Runs as root because avahi's D-Bus policy only lets root and the avahi user
+# create entry groups; an unprivileged or DynamicUser process is refused with
+# "Failed to create client object". It publishes one record and nothing else.
+ExecStart=/usr/local/bin/jb-pdf-viewer-mdns
+Restart=always
+RestartSec=5
+
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+RestrictAddressFamilies=AF_UNIX AF_NETLINK AF_INET AF_INET6
+CapabilityBoundingSet=
+MemoryMax=32M
+
+[Install]
+WantedBy=multi-user.target

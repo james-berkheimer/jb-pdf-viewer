@@ -17,6 +17,7 @@ alias pdfv-disable='sudo systemctl disable  '"$PDFV_UNIT"' && echo "  will not s
 alias pdfv-status='systemctl status '"$PDFV_UNIT"' --no-pager'
 alias pdfv-logs='journalctl -u '"$PDFV_UNIT"' -f -n 40'
 alias pdfv-errors='journalctl -u '"$PDFV_UNIT"' -p warning -n 50 --no-pager'
+alias pdfv-name='systemctl status jb-pdf-viewer-mdns --no-pager | head -4; avahi-resolve -n jb-pdf-viewer.local'
 alias pdfv-cd='cd "$PDFV_HOME"'
 alias pdfv-edit='${EDITOR:-nano} "$PDFV_HOME/deploy/jb-pdf-viewer.service"'
 
@@ -33,7 +34,11 @@ pdfv() {
     # Read the port from the unit so this never drifts from what is deployed.
     port=$(systemctl show "$PDFV_UNIT" -p Environment --value 2>/dev/null \
            | tr ' ' '\n' | sed -n 's/^PDFV_PORT=//p')
-    host="$(hostname).local"
+    # The mDNS alias published by jb-pdf-viewer-mdns.service; fall back to
+    # the host's own name if that service is not running.
+    host="jb-pdf-viewer.local"
+    systemctl is-active --quiet jb-pdf-viewer-mdns.service 2>/dev/null \
+        || host="$(hostname).local"
     if [ "${port:-80}" = "80" ]; then url="http://${host}"
     else url="http://${host}:${port}"; fi
 
