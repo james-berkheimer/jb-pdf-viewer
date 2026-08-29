@@ -672,9 +672,12 @@ const BUTTON_ACTIONS = [
   ['#z-fit', 'zoomFit', 'Click to fit the page again'],
   ['#p-prev', 'prevPage', 'Previous page'],
   ['#p-next', 'nextPage', 'Next page'],
-  ['[data-mode="single"]', 'modeSingle', 'Single page'],
-  ['[data-mode="spread"]', 'modeSpread', 'Two-page spread'],
-  ['[data-mode="scroll"]', 'modeScroll', 'Continuous scroll'],
+  // Scoped to the toolbar on purpose: <body> also carries data-mode, comes
+  // first in the document, and would otherwise take the tooltip - showing it
+  // over the whole page wherever the pointer rests.
+  ['.seg [data-mode="single"]', 'modeSingle', 'Single page'],
+  ['.seg [data-mode="spread"]', 'modeSpread', 'Two-page spread'],
+  ['.seg [data-mode="scroll"]', 'modeScroll', 'Continuous scroll'],
 ];
 
 function refreshKeyHints() {
